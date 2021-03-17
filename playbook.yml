@@ -1,0 +1,73 @@
+#################################################
+# DO Community Playbooks: Docker
+#################################################
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+    - name: Install aptitude using apt
+      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+    - name: Install required system packages
+      apt: name={{ item }} state=latest update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce state=latest
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: create build directory
+      file:
+        path: /home/generic/ansible/docker
+        state: directory
+        mode: '0755'
+        owner: generic
+        group: generic
+
+    - name: copy Dockerfile
+      copy:
+        src: ./docker/Dockerfile
+        dest: /home/generic/ansible/docker/Dockerfile
+        mode: '0644'
+        owner: generic
+        group: generic
+
+    - name: copy apache_test folder
+      copy:
+        src: ./docker/apache_test
+        dest: /home/generic/ansible/docker
+        mode: '0644'
+        owner: generic
+        group: generic
+
+    - name: Build the apache image
+      docker_image:
+        name: apache
+        build:
+          path: /home/generic/ansible/docker
+        source: build
+        tag: v1
+
+    - name: Run apache containers
+      docker_container:
+        name: apache
+        image: apache:v1
+        exposed_ports: 80
+        published_ports: 8080:80
+        state: started

@@ -1,0 +1,5 @@
+---
+create_containers: 1
+#default_container_name: apache
+#default_container_image: apache
+default_container_command: sleep 1d

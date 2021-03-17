@@ -1,0 +1,8 @@
+---
+- hosts: all
+  become: true
+
+
+  tasks:
+    - name: Delete all running containers in all nodes
+      shell: docker rm $(docker ps -aq)
